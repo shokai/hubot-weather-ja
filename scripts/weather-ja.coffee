@@ -19,7 +19,8 @@ module.exports = (robot) ->
     place  = '東京'
     place  = msg.match[1] if msg.match[1]?
 
-    async.waterfall([
+
+    async.waterfall [
       (callback) ->
         weathearList.some((v,i) ->
           if v.city instanceof Array
@@ -33,6 +34,7 @@ module.exports = (robot) ->
               callback(null, v.city)
               return true
         )
+        callback "#{place}、そんな名前の場所知らない"
       , (areaData, callback) ->
         # livedoor 天気予報APIのバグ arealistのIDが5桁のものは0パディングしないといけない
         areaId =  ("0" + areaData.id).slice(-6)
@@ -43,7 +45,9 @@ module.exports = (robot) ->
             json = JSON.parse(body)
             callback(null, json)
     ], (err, result) ->
-      throw new Error('err catched.') if err
+      if err
+        msg.send err
+        return
       forecastTime = new Date(result.publicTime)
       text = "【お天気情報 #{place}】\n" +
       "■  #{forecastTime.toFormat("YYYY年MM月DD日HH24時MI分")}の予報です\n" +
@@ -53,4 +57,3 @@ module.exports = (robot) ->
       "#{result.link}"
 
       msg.send text
-    )
